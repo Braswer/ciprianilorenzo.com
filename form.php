@@ -1,23 +1,43 @@
 <?php
 
-    if( filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)){
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $name = strip_tags(trim($_POST["name"]));
+				$name = str_replace(array("\r","\n"),array(" "," "),$name);
+        $email = filter_var(trim($_POST["email"]), FILTER_SANITIZE_EMAIL);
+        $company = trim($_POST["company"]);
+        $message = trim($_POST["message"]);
 
-        $name = $_POST["name"];
-        $email = $_POST["email"];
-        $company = $_POST["company"];
-        $message = $_POST["message"];
+        if ( empty($name) OR empty($message) OR !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo "C'è stato un problema con l'invio, per favore compila tutti i campi e riprova";
+            exit;
+        }
 
-        $to = "lore.cip@gmail.com";
-        $body = "";
-        $message_subject = "Contatto di lavoro";
+        $recipient = "lore.cip@gmail.com";
+        $subject = "Nuovo contatto da $name";
+        $sender = "info@ciprianilorenzo.com";
 
-        $body .= "Da: ".$name. "\r\n";
-        $body .= "Email: ".$email. "\r\n";
-        $body .= "Di: ".$company. "\r\n";
-        $body .= "Messaggio: \r\n".$message. "\r\n";
+        $email_content = "Name: $name\n";
+        $email_content .= "Email: $email\n\n";
+        $email_content .= "Company: $company\n\n";
+        $email_content .= "Message:\n$message\n";
 
-        mail($to,$message_subject,$body);
+        $email_headers = "From: CiprianiLorenzo <$sender>";
 
-        header("Location: index.html");
-}
-    ?>
+        // Send the email.
+        if (mail($recipient, $subject, $email_content, $email_headers, "-f$sender")) {
+            http_response_code(200);
+            echo "Grazie mille! Il tuo messaggio è stato inviato.";
+        } else {
+            http_response_code(500);
+            echo "Oops! Qualcosa è andato storto e non è stato possibile inviare il tuo messaggio.";
+        }
+
+    } else {
+        http_response_code(403);
+        echo "C'è stato un problema con l'invio, per favore riprova.";
+    }
+
+
+
+?>
